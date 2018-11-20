@@ -1,0 +1,1372 @@
+public class SelectDebtorController {
+    @AuraEnabled
+    public static List<account> fetchAccount(String searchKeyWord, string selectAccounttype) {
+        system.debug('selectAccounttype--'+selectAccounttype);   
+        List<Account> returnList = new List <Account>();
+        String searchKey = searchKeyWord + '%';
+        
+        if(String.isNotBlank(searchKey)){
+            List<Account> lstOfAcc = [select id, Name,delivery1__c,delivery2__c,delivery3__c,delivery4__c,Crown_Venue_Name__c,Crown_Ship_to_ID__c from account  WHERE Account_Type__c = 'Debtor' AND (name LIKE : (searchKey + '%') ) limit 50];
+            for (Account acc: lstOfAcc) {
+                returnList.add(acc);
+            }
+            
+            if(selectAccounttype == 'Debtor'){
+                List <Account> lstOfAccount = [select id, Name,delivery1__c,delivery2__c,delivery3__c,delivery4__c,Crown_Venue_Name__c,Crown_Ship_to_ID__c from account  WHERE Account_Type__c = 'Debtor' AND (name LIKE : (searchKey + '%') ) limit 200];
+                for (Account acc: lstOfAccount) {
+                    returnList.add(acc);
+                }
+            }
+            
+            /*    if(selectAccounttype == 'Creditor'){
+List <Account> lstOfAccount = [select id, Name,delivery1__c,delivery2__c,delivery3__c,delivery4__c,Crown_Venue_Name__c,Crown_Ship_to_ID__c from account  WHERE Account_Type__c = 'Creditor' AND (name LIKE : ('%' + searchKey + '%') ) limit 200];
+for (Account acc: lstOfAccount) {
+returnList.add(acc);
+}
+}
+
+if(selectAccounttype == 'Debtor/Creditor'){
+List <Account> lstOfAccount = [select id, Name,delivery1__c,delivery2__c,delivery3__c,delivery4__c,Crown_Venue_Name__c,Crown_Ship_to_ID__c from account  WHERE Account_Type__c = 'Debtor/Creditor' AND (name LIKE : ('%' + searchKey + '%') ) limit 200];
+for (Account acc: lstOfAccount) {
+returnList.add(acc);
+}
+} */
+        } 
+        
+        if(selectAccounttype == 'Debtor'){
+            List <Account> lstOfAccountDebtor = [select id, Name,delivery1__c,delivery2__c,delivery3__c,delivery4__c,Crown_Venue_Name__c,Crown_Ship_to_ID__c from account  WHERE Account_Type__c = 'Debtor'limit 200];   
+            for (Account acc1: lstOfAccountDebtor) {
+                returnList.add(acc1);
+            }
+        } 
+        /*     else if(selectAccounttype == 'Creditor'){
+List <Account> lstOfAccountCreditor = [select id, Name,delivery1__c,delivery2__c,delivery3__c,delivery4__c,Crown_Venue_Name__c,Crown_Ship_to_ID__c from account  WHERE Account_Type__c = 'Creditor'limit 200];   
+for (Account acc2: lstOfAccountCreditor) {
+returnList.add(acc2);
+}
+} 
+else if(selectAccounttype == 'Debtor/Creditor'){
+List <Account> lstOfAccountDebtorCreditor = [select id, Name,delivery1__c,delivery2__c,delivery3__c,delivery4__c,Crown_Venue_Name__c,Crown_Ship_to_ID__c from account limit 200];        
+for (Account acc3: lstOfAccountDebtorCreditor) {
+returnList.add(acc3);
+}
+}  */
+        return returnList;
+    } 
+    
+    @AuraEnabled
+    public static list<Account> SelectDeb(String DebtorId) {
+        system.debug('DebtorId--'+DebtorId);
+        list<Account> Accdebtor= [select Discount_Class__r.Name,saledisc__c,Name,id,debtor__c,Credit_Check__c,arl_bal90d__c,arl_bal60d__c,arl_bal120d__c,Deptor_Delivery_Notes__c,msg1__c,msg2__c,msg3__c,msg4__c,delivery1__c,delivery2__c,delivery3__c,delivery4__c,delivery5__c,delivery6__c,defcarrier__c ,Deptor_Credit_Rating__c,ShippingStreet,ShippingCity,ShippingState,ShippingPostalCode,ShippingCountry,location__c,crrating__c,Delivery_Post_Code__c,Delivery_State__c from Account where (name =:DebtorId OR id=:DebtorId)   limit 1];
+        
+        
+        system.debug('---Accdebtor---'+Accdebtor);
+        
+        if(Accdebtor.size()>0 ){
+            system.debug('---Accdebtor--id---'+Accdebtor.get(0).id);
+            return Accdebtor;
+        }
+        
+        return null ;
+    }
+    
+    @AuraEnabled
+    public static list<string> getOptionsList(String getdebid){
+        system.debug('Get Brand ');
+        
+        string debtId='';
+        system.debug('--getdebid--'+getdebid);
+        if(getdebid.length() > 15){
+            debtId= getdebid.substring(0,15);
+        }
+        else{            debtId = getdebid;
+            } 
+        
+        Account deptor = [select id,defcarrier__c from Account where id =:debtId limit 1];
+        set<string> Brandset= new set<string>(); 
+        for(Stock_Item__c s: [SELECT id,name, Brand__c, Sub_Brand__c, Vintage__c,Tablet__c, Variety__c,NSW_Tablet__c,QLD_Tablet__c,MEL_Tablet__c,SA_Tablet__c,WA_Tablet__c FROM Stock_Item__c where Brand__c!=null AND Tablet__c = 'Y' order by Brand__c asc])
+        {
+            if(s.Tablet__c == 'Y' && ((deptor.defcarrier__c == 'MVIC' && s.MEL_Tablet__c == 'Y') || ((deptor.defcarrier__c == 'NSWALN' ||  deptor.defcarrier__c == 'AUSPMNSW') && s.NSW_Tablet__c == 'Y') || ((deptor.defcarrier__c == 'ALN' || deptor.defcarrier__c =='AUSPMQLD') && s.QLD_Tablet__c == 'Y')|| ((deptor.defcarrier__c == 'MEL' || deptor.defcarrier__c =='AUSPMVIC') && s.MEL_Tablet__c == 'Y') || (deptor.defcarrier__c == 'SA' && s.SA_Tablet__c == 'Y')  || (deptor.defcarrier__c == 'WA' && s.WA_Tablet__c == 'Y') || (deptor.defcarrier__c == 'ALNNSW'   && s.WA_Tablet__c == 'Y')) )            
+            {
+                Brandset.add(s.Brand__c);
+            }   
+            
+        }
+        list<string> strlist= new list<string>();
+        
+        strlist.addAll(Brandset);
+        system.debug('strlist---->'+strlist);
+        return strlist;
+    }
+    
+    @AuraEnabled
+    public static list<string> getSubBrandList(string Brandname,string acidd)
+    {   system.debug('Get SubBrand ');
+     system.debug('Brandname--'+Brandname);
+     system.debug('Debtor Id --'+acidd);
+     set<string> SubBrandset= new set<string>();
+     string debtId='';
+     system.debug('--acidd--'+acidd);
+     if(acidd.length() > 15){
+         debtId= acidd.substring(0,15);
+     }
+     else{            debtId = acidd;
+         }
+     
+     system.debug('--debtId--'+debtId);
+     Account deptor = [select id,defcarrier__c from Account where id =:debtId limit 1];
+     
+     for(Stock_Item__c s: [SELECT id,name, Brand__c, Sub_Brand__c, Vintage__c, Variety__c,NSW_Tablet__c,QLD_Tablet__c,MEL_Tablet__c,SA_Tablet__c,WA_Tablet__c,Tablet__c  FROM Stock_Item__c where Brand__c =: Brandname AND Tablet__c = 'Y' order by Sub_Brand__c asc])
+     {
+         if(s.Tablet__c == 'Y' && ((deptor.defcarrier__c == 'MVIC' && s.MEL_Tablet__c == 'Y') || ((deptor.defcarrier__c == 'NSWALN' ||  deptor.defcarrier__c == 'AUSPMNSW') && s.NSW_Tablet__c == 'Y') || ((deptor.defcarrier__c == 'ALN' || deptor.defcarrier__c =='AUSPMQLD') && s.QLD_Tablet__c == 'Y')|| ((deptor.defcarrier__c == 'MEL' || deptor.defcarrier__c =='AUSPMVIC') && s.MEL_Tablet__c == 'Y') || (deptor.defcarrier__c == 'SA' && s.SA_Tablet__c == 'Y')  || (deptor.defcarrier__c == 'WA' && s.WA_Tablet__c == 'Y') || (deptor.defcarrier__c == 'ALNNSW'   && s.WA_Tablet__c == 'Y')) )       
+         {   
+             SubBrandset.add(s.Sub_Brand__c);
+         }
+     }
+     
+     list<string> strlistOfSub= new list<string>();
+     strlistOfSub.addAll(SubBrandset);
+     return strlistOfSub;             
+    }
+    
+    @AuraEnabled
+    public static list<string> getVarietyList(string Brandname,string acidd,string SubBrand)
+    {           system.debug('Get Variety ');                        
+     system.debug('Brandname---'+Brandname+'---acidd----'+acidd+'----SubBrand----'+SubBrand);
+     
+     set<string> Varietyset= new set<string>();
+     string debtId='';
+     system.debug('--acidd--'+acidd);
+     if(acidd.length() > 15){
+         debtId= acidd.substring(0,15);
+     }
+     else{            debtId = acidd;
+         }
+     
+     system.debug('--debtId--'+debtId);
+     Account deptor = [select id,defcarrier__c from Account where id =:debtId limit 1];
+     
+     for(Stock_Item__c s: [SELECT id,name, Brand__c, Sub_Brand__c, Vintage__c, Variety__c,NSW_Tablet__c,QLD_Tablet__c,MEL_Tablet__c,SA_Tablet__c,WA_Tablet__c,Tablet__c FROM Stock_Item__c where Brand__c =: Brandname AND Sub_Brand__c =: SubBrand AND Tablet__c = 'Y' order by Variety__c asc])
+     {
+         if(s.Tablet__c == 'Y' && ((deptor.defcarrier__c == 'MVIC' && s.MEL_Tablet__c == 'Y') || ((deptor.defcarrier__c == 'NSWALN' ||  deptor.defcarrier__c == 'AUSPMNSW') && s.NSW_Tablet__c == 'Y') || ((deptor.defcarrier__c == 'ALN' || deptor.defcarrier__c =='AUSPMQLD') && s.QLD_Tablet__c == 'Y')|| ((deptor.defcarrier__c == 'MEL' || deptor.defcarrier__c =='AUSPMVIC') && s.MEL_Tablet__c == 'Y') || (deptor.defcarrier__c == 'SA' && s.SA_Tablet__c == 'Y')  || (deptor.defcarrier__c == 'WA' && s.WA_Tablet__c == 'Y') || (deptor.defcarrier__c == 'ALNNSW'   && s.WA_Tablet__c == 'Y')) )                 
+         {
+             Varietyset.add(s.Variety__c);
+         }   
+     }
+     list<string> strlistOfVariety= new list<string>();
+     strlistOfVariety.addAll(Varietyset);
+     return strlistOfVariety;  
+    }
+    
+    @AuraEnabled
+    public static list<string> getVintageList(string Brandname,string acidd,string SubBrand,string variety)
+    {       system.debug('Get Vintage ');
+     system.debug('Get Vintage List in Class');
+     system.debug('Brandname-----'+Brandname);
+     system.debug('SubBrand-----'+SubBrand);
+     system.debug('variety-----'+variety);
+     set<string> Vintageset= new set<string>();      
+     
+     string debtId='';
+     system.debug('--acidd--'+acidd);
+     if(acidd.length() > 15){
+         debtId= acidd.substring(0,15);
+     }
+     else{            debtId = acidd;
+         }
+     
+     system.debug('--debtId--'+debtId);
+     Account deptor = [select id,defcarrier__c from Account where id =:debtId limit 1];
+     for(Stock_Item__c s: [SELECT id,name, Brand__c, Sub_Brand__c, Vintage__c, Variety__c,NSW_Tablet__c,QLD_Tablet__c,MEL_Tablet__c,SA_Tablet__c,WA_Tablet__c,Tablet__c FROM Stock_Item__c where Brand__c =: Brandname AND Sub_Brand__c =: SubBrand AND Variety__c =: variety order by Vintage__c asc])
+     {
+         if(s.Tablet__c == 'Y' && ((deptor.defcarrier__c == 'MVIC' && s.MEL_Tablet__c == 'Y') || ((deptor.defcarrier__c == 'NSWALN' ||  deptor.defcarrier__c == 'AUSPMNSW') && s.NSW_Tablet__c == 'Y') || ((deptor.defcarrier__c == 'ALN' || deptor.defcarrier__c =='AUSPMQLD') && s.QLD_Tablet__c == 'Y')|| ((deptor.defcarrier__c == 'MEL' || deptor.defcarrier__c =='AUSPMVIC') && s.MEL_Tablet__c == 'Y') || (deptor.defcarrier__c == 'SA' && s.SA_Tablet__c == 'Y')  || (deptor.defcarrier__c == 'WA' && s.WA_Tablet__c == 'Y') || (deptor.defcarrier__c == 'ALNNSW'   && s.WA_Tablet__c == 'Y')) )        
+         {        
+             
+             Vintageset.add(s.Vintage__c); 
+         }   
+     }
+     system.debug('Vintageset-----'+Vintageset);
+     list<string> strlistOfVintage= new list<string>();
+     strlistOfVintage.addAll(Vintageset);
+     system.debug('strlistOfVintage-----'+strlistOfVintage);
+     return strlistOfVintage;  
+    }
+    
+    @AuraEnabled
+    public static list<string> getUnitList(string Brandname,string acidd,string SubBrand,string variety,string vintage)
+    { 
+        system.debug('Get Size  ');
+        system.debug('Brandname----'+Brandname);
+        system.debug('acidd---'+acidd);
+        system.debug('SubBrand---'+SubBrand);
+        system.debug('variety---'+variety);
+        system.debug('vintage---'+vintage);
+        
+        list<String> str= new list<string>();
+        set<string> strSet = new set<string>();
+        map<string,string> mymap= new map<string,string>();
+        
+        string debtId='';
+        system.debug('--acidd--'+acidd);
+        if(acidd.length() > 15){
+            debtId= acidd.substring(0,15);
+        }
+        else{            debtId = acidd;
+            }
+        system.debug('--debtId--'+debtId);
+        Account deptor = [select id,defcarrier__c from Account where id =:debtId limit 1];     
+        
+        for(Stock_Item__c s: [SELECT id,name,(select id,Unit__r.Name,Unit__r.Name__c,Stock_Item__r.name,Default_Unit__c from Stock_Units__r order by Default_Unit__c),Brand__c, Sub_Brand__c, Vintage__c, Variety__c,NSW_Tablet__c,QLD_Tablet__c,MEL_Tablet__c,SA_Tablet__c,WA_Tablet__c,Tablet__c FROM Stock_Item__c where Brand__c =: Brandname AND Sub_Brand__c =: SubBrand AND Variety__c =: variety AND  Vintage__c =: Vintage  order by Brand__c asc])
+        {
+            
+            system.debug('----a--'+s.Stock_Units__r.size());
+            if(s.Tablet__c == 'Y' && ((deptor.defcarrier__c == 'MVIC' && s.MEL_Tablet__c == 'Y') || ((deptor.defcarrier__c == 'NSWALN' ||  deptor.defcarrier__c == 'AUSPMNSW') && s.NSW_Tablet__c == 'Y') || ((deptor.defcarrier__c == 'ALN' || deptor.defcarrier__c =='AUSPMQLD') && s.QLD_Tablet__c == 'Y')|| ((deptor.defcarrier__c == 'MEL' || deptor.defcarrier__c =='AUSPMVIC') && s.MEL_Tablet__c == 'Y') || (deptor.defcarrier__c == 'SA' && s.SA_Tablet__c == 'Y')  || (deptor.defcarrier__c == 'WA' && s.WA_Tablet__c == 'Y') || (deptor.defcarrier__c == 'ALNNSW'   && s.WA_Tablet__c == 'Y')) )      
+            {        
+                
+                system.debug(s.Stock_Units__r.size());
+                for(Stock_Unit__c susize : s.Stock_Units__r)
+                {
+                    
+                    mymap.put(susize.Unit__r.name,susize.Unit__r.name__c);
+                    strSet.add(susize.Unit__r.name__c); 
+                    
+                }
+            }   
+        }
+        str.addAll(strSet); 
+        system.debug('--str--unitss--'+str);
+        return str;   
+    } 
+    
+    @AuraEnabled
+    public static list<string> getStoItem(string Brandname,string acidd,string SubBrand,string variety,string vintage,string size)
+    {                       
+        system.debug('Available Stock--Brandname--'+Brandname);
+        system.debug('Available Stock---acidd--'+acidd);
+        system.debug('Available Stock---SubBrand--'+SubBrand);
+        system.debug('Available Stock----variety--'+variety);
+        system.debug('Available Stock----vintage--'+vintage);
+        system.debug('Available Stock----size--'+size);
+        
+        
+        
+        system.debug('Available Stock');
+        
+        string stkdesc='';
+        string stkId='';
+        string debtId= '';
+        list<string> str= new list<string>();
+        map<string,Integer> returnMap= new map<string,Integer>();
+        if(acidd.length() > 15){
+            debtId= acidd.substring(0,15);
+        }
+        else{            debtId = acidd;
+            }
+        
+        Account deptor = [select id,defcarrier__c,location__c from Account where id =:debtId limit 1];
+        
+        for(Stock_Item__c s: [SELECT id,name,Brand__c, Sub_Brand__c, Vintage__c,desc__c,Discount__c, Variety__c,NSW_Tablet__c,QLD_Tablet__c,MEL_Tablet__c,SA_Tablet__c,WA_Tablet__c,Tablet__c,(select id,Unit__r.Name,Unit__r.Name__c,ConvertF__c,Stock_Item__r.name,Default_Unit__c from Stock_Units__r order by Default_Unit__c) FROM Stock_Item__c where Brand__c =: Brandname AND Sub_Brand__c =: SubBrand AND Variety__c =: variety AND  Vintage__c =: Vintage  order by Brand__c ])
+        {
+            system.debug('--Stock Item ---Discount --->'+s);
+            system.debug('--1-stock childs---'+s.Stock_Units__r);
+            system.debug('brandname======>>>>'+s.Brand__c);
+            if(s.Tablet__c == 'Y' && ((deptor.defcarrier__c == 'MVIC' && s.MEL_Tablet__c == 'Y') || ((deptor.defcarrier__c == 'NSWALN' ||  deptor.defcarrier__c == 'AUSPMNSW') && s.NSW_Tablet__c == 'Y') || ((deptor.defcarrier__c == 'ALN' || deptor.defcarrier__c =='AUSPMQLD') && s.QLD_Tablet__c == 'Y')|| ((deptor.defcarrier__c == 'MEL' || deptor.defcarrier__c =='AUSPMVIC') && s.MEL_Tablet__c == 'Y') || (deptor.defcarrier__c == 'SA' && s.SA_Tablet__c == 'Y')  || (deptor.defcarrier__c == 'WA' && s.WA_Tablet__c == 'Y') || (deptor.defcarrier__c == 'ALNNSW'   && s.WA_Tablet__c == 'Y')) )        
+            {        
+                
+                system.debug('---stock childs--2-'+s.Stock_Units__r);
+                for(Stock_Unit__c susize : s.Stock_Units__r)
+                {
+                    system.debug(susize.Unit__r.Name+'------susize.Unit__r.Name----'+size);
+                    if(susize.Unit__r.name__c == size)  //name__c
+                    { 
+                        stkdesc=s.name;
+                        str.add(s.name);
+                        str.add(s.id);
+                        stkId=s.id;
+                        
+                        if(string.isNotBlank(s.desc__c))
+                        { 
+                            str.clear();
+                            stkdesc=s.desc__c;    
+                            str.add(s.desc__c);
+                            str.add(s.id);
+                            //  string dis = string.valueOf(s.Discount__c);  // added discount on the discount field 
+                            //  str.add(dis);
+                        }
+                        
+                        
+                        
+                        system.debug(deptor.location__c+'---loc---');
+                        try{
+                            system.debug('--Stock Item Id---'+stkId+'--deptor.location__c----'+deptor.location__c);
+                            
+                            list<Stock_Balance__c> stkbal=[select id,Location_Code__c,Stock_Item__c,Location_CodeF__c,SF_Available_Stock__c,Available_Stock_EZY__c from Stock_Balance__c where Stock_Item__c=:stkId AND Location_CodeF__c=:deptor.location__c ];
+                            system.debug('-----stkbal-----'+stkbal);
+                            
+                            if(stkbal.size() > 0)
+                            {
+                                //    Integer cal=  Integer.valueOf(stkbal[0].SF_Available_Stock__c /susize.ConvertF__c);
+                                Integer cal=  Integer.valueOf(stkbal[0].Available_Stock_EZY__c/susize.ConvertF__c);
+                                system.debug('Available_Stock_EZY__c------->'+stkbal[0].Available_Stock_EZY__c +'----susize.ConvertF__c--->'+susize.ConvertF__c);
+                                system.debug('cal-->'+cal);
+                                
+                                returnMap.put(stkdesc,cal);
+                                returnMap.put(s.Id,cal);
+                                str.add(String.valueOf(cal));
+                            } 
+                            // add below code when item 2 have no Available balance ..
+                            else {
+                                Integer cal1 = 0;
+                                str.add(String.valueOf(cal1));
+                            }
+                            string dis = string.valueOf(s.Discount__c);  // added discount on the discount field 
+                            str.add(dis); 
+                            
+                        }catch(Exception e)
+                        {
+                            system.debug(e);
+                        } 
+                    } 
+                } 
+                
+            } 
+            
+        }
+        
+        system.debug('---returned stk--'+str);
+        system.debug('---returnMap--'+returnMap);
+        
+        return str; 
+    } 
+    
+    @AuraEnabled
+    public static list<Free_Reason__c > getFreeReasonList()
+    { 
+        return [select id,Description__c,Reason__c from Free_Reason__c];
+    }  
+    
+    
+    //*************************************** Save Method (Submit) ***********************************************
+    @AuraEnabled
+    public static map<string,string> SubmitFun(string [] wholeList22,string debtorIDD,string debtorIDD_M,string del1,string del2,string del3,string del4,string del5,string msg1,string msg2,string msg3,string msg4,string Credit,string CreditTerm,string invDate,string custOrdNo,string location,string defcarrier,string customer_Service,string statusValue,string ButtonType,string sfoId,map<integer,string> OrderIdMap)
+    {   system.debug('----SUBMIT METHOD START---'); 
+     system.debug('wholeList22----'+wholeList22.size());
+     system.debug('debtorIDD-----'+debtorIDD);
+     system.debug('debtorIDD_M-----'+debtorIDD_M);
+     system.debug('del1--------'+del1);
+     system.debug('del2-----'+del2);
+     system.debug('del3--------'+del3);
+     system.debug('del4--------'+del4);
+     system.debug('del5--------'+del5);
+     system.debug('msg1------'+msg1);
+     system.debug('msg2------'+msg2);
+     system.debug('msg3------'+msg3);
+     system.debug('msg4------'+msg4);
+     system.debug('Credit------'+Credit);
+     system.debug('CreditTerm------'+CreditTerm);
+     system.debug('invDate------'+invDate);
+     system.debug('custOrdNo------'+custOrdNo); 
+     system.debug('location------'+location);
+     system.debug('defcarrier------'+defcarrier);
+     system.debug('customer_Service------'+customer_Service);
+     system.debug('statusValue------'+statusValue);
+     system.debug('ButtonType---'+ButtonType); 
+     system.debug('sfoId---'+sfoId); 
+     system.debug('OrderIdMap---'+OrderIdMap);
+     
+     
+     
+     
+     Id templateId2;
+     string emailstr2 = '';
+     string creditApproval_normal = '';
+     SFOrder__c ordobj;
+     List<Order_Line_Item__c> newolilist = new List<Order_Line_Item__c>();
+     
+     
+     Contact tempContact  = new Contact();
+     List<Messaging.SingleEmailMessage> allemail = new List<Messaging.SingleEmailMessage> ();
+     list<string> listOfDel = new list<string>();
+     
+     
+     //debtor ID  In first time 
+     string Debtorid_Main = '' ;
+     
+     if( String.isNotBlank(debtorIDD) ){
+         system.debug('debtor ID  In first time--'+debtorIDD);
+         if(debtorIDD.length()>15)
+         { Debtorid_Main = debtorIDD.subString(0,15); }
+         else
+         { Debtorid_Main = debtorIDD; }
+     }
+     
+     //debtor ID  In Modify
+     string Debtorid_Main_Modify = '' ;
+     if( String.isNotBlank(debtorIDD_M)     ){
+         system.debug('debtor ID  In Modify--'+debtorIDD_M);
+         if(debtorIDD.length()>15)
+         { Debtorid_Main_Modify = debtorIDD_M.subString(0,15); }
+         else
+         { Debtorid_Main_Modify = debtorIDD_M; }     
+     }
+     
+     id sfId;
+     string appv;
+     string msg;
+     Approval.ProcessSubmitRequest req;
+     
+     string day1 = invDate.substringBefore('-');
+     string year1 =  invDate.substringAfter('-'); 
+     
+     string month1 = invDate.substringBetween('-','-');
+     string final22 = day1+'-'+month1+'-'+year1;
+     system.debug('---day1--'+day1+'--month1--'+month1+'--year1--'+year1);
+     
+     //10/09/2018
+     
+     if(ButtonType == '')
+     {
+         system.debug('************* ButtonType " " ************');
+         Account deptor = [select id,defcarrier__c,location__c,Credit_Check__c from Account where id =:Debtorid_Main limit 1];
+         
+         if(wholeList22.size()>0)  
+         {
+             
+             ordobj = new SFOrder__c();
+             ordobj.Debtor__c = Debtorid_Main;  
+             Date dob1= Date.valueOf(final22);
+             ordobj.orddate__c = Date.parse(dob1.format());
+             ordobj.Note_to_Customer_Service__c = customer_Service; 
+             // ordobj.New_Delivery_Instructions__c = Delivery_Instructions1;
+             // ordobj.New_Delivery_Instructions_2__c = Delivery_Instructions2; 
+             ordobj.Send_Mail__c = true;
+             ordobj.Status_After_Approval__c = statusValue;
+             ordobj.message1__c= msg1;
+             ordobj.message2__c= msg2;
+             ordobj.message3__c= msg3;
+             ordobj.message4__c= msg4;
+             ordobj.delivery1__c=del1;
+             ordobj.delivery2__c=del2;
+             ordobj.delivery3__c=del3;
+             ordobj.delivery4__c=del4;
+             ordobj.delivery_Post_Code__c=del5;
+             ordobj.location1__c=location;
+             ordobj.defcarrier__c=defcarrier;
+             ordobj.Customer_Purchase_Order_No__c = custOrdNo;
+             ordobj.Credit_terms__c   = CreditTerm;
+             
+             
+             if(credit.trim() == 'Good' || deptor.Credit_Check__c == 'Never')
+             {  system.debug('IF CALL GOOD-NEVER');
+              if(statusValue == 'Submit Sales Order')
+              {   
+                  ordobj.Status__c = 'Sales Order - Draft';
+                  ordobj.Internal_2nd_Button__c = true ;
+                  ordobj.Community_Button__c = false;
+              }
+              else if(statusValue == 'Submit Invoice Draft')
+              {
+                  ordobj.Status__c = 'Invoice - Draft';
+                  ordobj.Internal_1st_Button__c = True; 
+              }
+              else if(statusValue == 'Draft')
+              {
+                  ordobj.Status__c = 'Draft';
+                  ordobj.Draft_Button__c = true ;
+              }
+              else if(statusValue == 'Quote')
+              {
+                  ordobj.Status__c = 'Quote';
+                  ordobj.Quote_Button__c = true ;
+              }
+              else
+              {
+                  ordobj.Status__c = 'Submitted';
+                  system.debug('call status = submitting ');
+              }
+             }
+             else{
+                 system.debug('ELSE CALL GOOD-NEVER');
+                 if(statusValue == 'Submit Sales Order')
+                 {   
+                     ordobj.Internal_2nd_Button__c = true ;
+                     ordobj.Community_Button__c = false;
+                     //   ordobj.Status__c = 'Check Credit';    status remove when flows set  15-10-2018 
+                     ordobj.Status__c = 'Pending';          // status chenge when flows set  15-10-2018
+                     ordobj.Credit_Approval__c = 'Requires Approval';
+                 }
+                 else if(statusValue == 'Draft')
+                 {
+                     ordobj.Status__c = 'Draft';
+                     ordobj.Draft_Button__c = true ;
+                 }
+                 else if(statusValue == 'Quote')
+                 {
+                     ordobj.Status__c = 'Quote';
+                     ordobj.Quote_Button__c = true ;
+                 }
+                 else{
+                     //   ordobj.Status__c = 'Check Credit';    status remove when flows set  15-10-2018 
+                     ordobj.Status__c = 'Pending';          // status chenge when flows set  15-10-2018
+                     ordobj.Credit_Approval__c = 'Requires Approval';
+                     ordobj.Internal_1st_Button__c = True;   
+                     ordobj.Community_Button__c = false;
+                 }
+             } 
+             insert ordobj;
+             sfId = ordobj.id;
+             
+             system.debug('INSERT SFORDER --'+sfId);
+         }
+         else       
+         {    system.debug('ELSE CALL ');        
+          return null;
+         } 
+         
+         
+         //         *****FOR LOOP START **** 
+         for(String WholeString : wholeList22) {
+             system.debug('----FOR LOOP wholeList22----');  
+             
+             string brand =WholeString.subStringBefore('@brand*');
+             string size = WholeString.substringBetween('@brand*', '@size*');
+             string quantity = WholeString.substringBetween('@size*', '@quan*');
+             string Variety = WholeString.substringBetween('@quan*', '@vari*');
+             string Vintage = WholeString.substringBetween('@vari*', '@vint*');
+             string sub_brand = WholeString.substringBetween('@vint*', '@subbrand*');
+             string FreeReason  =WholeString.substringBetween('@subbrand*', '@freeRsn*');
+             string DiscountApproval = WholeString.substringBetween('@freeRsn*', '@DiscountApproval*');
+             string DiscountFrequency = WholeString.substringBetween('@DiscountApproval*', '@DiscountAmt*');
+             string amount = WholeString.substringBetween('@DiscountAmt*', '@DiscountType*');
+             string DiscountType = WholeString.substringBetween('@DiscountType*', '@HidstkId*');
+             string HidstkId = WholeString.substringBetween('@HidstkId*', '@orderLineId*');
+             string orderLineId = WholeString.substringBetween('@orderLineId*', '@hidstkId_update*');
+             
+             string HidstkId_update = WholeString.substringBetween('@hidstkId_update*', '@orderLineId_update*');
+             string orderLineId_update = WholeString.substringBetween('@orderLineId_update*', '. ');
+             
+             
+             
+             
+             
+             
+             system.debug('brand --->'+brand);
+             system.debug('size --->'+size);
+             system.debug('quantity --->'+quantity);
+             system.debug('Variety --->'+Variety);
+             system.debug('Vintage --->'+Vintage);
+             system.debug('sub_brand --->'+sub_brand);
+             system.debug('FreeReason --->'+FreeReason);
+             system.debug('DiscountApproval --->'+DiscountApproval);
+             system.debug('DiscountFrequency --->'+DiscountFrequency);
+             system.debug('amount --->'+amount);
+             system.debug('DiscountType--->'+DiscountType);
+             system.debug('HidstkId--->'+HidstkId);
+             system.debug('orderLineId--->'+orderLineId);
+             
+             
+             if(DiscountApproval.trim() == 'Requires Approval')
+             {
+                 appv= DiscountApproval.trim();
+             }
+             
+             
+             Order_Line_Item__c oliobj = new Order_Line_Item__c ();  
+             oliobj.SFOrder__c = sfId;      
+             
+             
+             if(!Test.isRunningTest())
+             {
+                 system.debug('HidstkId--'+HidstkId);
+                 system.debug('size--'+size);
+                 
+                 Stock_Item__c stkid=[select id,name,desc__c,(select id,Unit__r.Name,Unit__r.Name__c,Stock_Item__r.name,Default_Unit__c,ConvertF__c from Stock_Units__r where Unit__r.Name__c =: size.trim() limit 1) from Stock_Item__c where id =: HidstkId limit 1];  
+                 system.debug('stkid---->'+stkid);
+                 
+                 Stock_Unit__c[] stkUnit= [SELECT id,Stock_item__c,ConvertF__c,Unit__r.Name__c FROM Stock_Unit__c WHERE Stock_item__c =: HidstkId AND  Unit__r.Name__c =: size.trim()  ];    
+                 
+                 system.debug('stkUnit---->'+stkUnit);
+                 
+                 Decimal TotalVal=0.00; 
+                 oliobj.Stock_Item__c = stkid.id;
+                 
+                 oliobj.unit__c = stkid.Stock_Units__r[0].Unit__r.Name;
+                 
+                 oliobj.Unit_NameS__c = size.trim();
+                 
+                 if (stkUnit.size() > 0){
+                     oliobj.Unit_ConvertS__c = stkUnit[0].ConvertF__c;
+                 }
+             }
+             
+             
+             if(FreeReason.trim() != '--None--')
+             {
+                 if(FreeReason.trim() != '')
+                 {
+                     Free_Reason__c frCode=[select id,Reason__c from Free_Reason__c where Description__c =: FreeReason.trim() limit 1];
+                     system.debug('Free Reason---'+frCode);
+                     oliobj.Free_Reason_Code__c = frCode.Reason__c;
+                 }
+                 
+             }
+             
+             oliobj.BrandText__c= brand;
+             oliobj.Sub_Brand__c= sub_brand;
+             oliobj.VarietyText__c= variety;
+             oliobj.VintageText__c= vintage;
+             oliobj.Quantity__c = Decimal.valueOf(quantity.trim());
+             if(FreeReason.trim() != '--None--'){ 
+                 oliobj.Free_Reason__c = FreeReason;
+                 if(FreeReason.trim()=='No Discount'){           
+                     oliobj.Standard_Discount__c = 'No';                         
+                 }
+             }
+             
+             
+             system.debug('----outside loop -amount--'+amount.trim());
+             
+             oliobj.Discount_Amount__c = 0.00 ;
+             
+             
+             //   EMAIL FU
+             
+             system.debug('Zakir0');
+             //  if(amount.trim() != 'undefined' && (amount.trim() != '' || amount.trim() != null))
+             if(amount.trim() != '')
+             {
+                 system.debug('Zakir1');
+                 oliobj.Discount_Amount__c = Double.valueOf(amount);
+                 system.debug('--amount---'+Double.valueOf(amount));
+                 oliobj.Applied_Discount__c = 'Yes';
+                 
+                 if(credit.trim() == 'Good' || deptor.Credit_Check__c == 'Never')
+                 {     
+                     if(ordobj.Status__c != 'Pending' && ordobj.Discount_Approval__c != 'Requires Approval'){
+                         ordobj.Status__c = 'Pending';
+                         ordobj.Discount_Approval__c = 'Requires Approval';
+                         ordobj.Status_Changed_Manually__c = true ;
+                         update ordobj;
+                         
+                         SFOrder__c s  = [select id , Status_Changed_Manually__c from SFOrder__c where id =: ordobj.id ];
+                         s.Status_Changed_Manually__c = false ;
+                         update s;
+                         
+                         list<ProcessInstanceWorkitem> stt =[ SELECT Id FROM ProcessInstanceWorkitem WHERE ProcessInstance.TargetObjectId = : ordobj.id AND ProcessInstance.Status = 'Pending' LIMIT 1 ];
+                         system.debug('---approvalId---'+stt.size());
+                         
+                         if(stt.size()==0)
+                         {
+                             
+                             templateId2 = [select id, name from EmailTemplate where name =: 'S_ApprovalTemplate'].id;  // For manager
+                             // getting the values from the custom settings
+                             List<Discount_Approval_Emails__c> mcs = Discount_Approval_Emails__c.getall().values();
+                             system.debug('Zakir -- never--- discount email--'+mcs);
+                             if(mcs.size()>0){
+                                 emailstr2 = mcs[0].Name;
+                                 creditApproval_normal  = mcs[0].Name;
+                             }
+                             else
+                             {
+                                 //    emailstr2 = 'approvals@robertoatley.com.au';
+                                 //    creditApproval_normal  = 'approvals@robertoatley.com.au';
+                                 
+                                 emailstr2 = 'zaki.iqbal@sfclouds.com';
+                                 creditApproval_normal  = 'zaki.iqbal@sfclouds.com';
+                             }
+                             
+                             req=new Approval.ProcessSubmitRequest();
+                             system.debug('---objevctd id ---'+ordobj.id);
+                             req.setObjectId(ordobj.id);
+                             system.debug('-Discount-Approval in Class OrderRequest---');
+                             Approval.ProcessResult result2 = Approval.process(req);
+                         }
+                         
+                         
+                     }
+                     
+                     
+                     
+                     
+                 } 
+                 else if(deptor.Credit_Check__c == 'Always'){
+                     
+                     ordobj.Discount_Approval__c = 'Requires Approval';
+                     ordobj.Status__c = 'Pending';
+                     
+                     // error come when this below line (ordobj.Status_Changed_Manually__c = true ;) is not there                            
+                     ordobj.Status_Changed_Manually__c = true ;
+                     update ordobj;
+                     
+                     SFOrder__c s  = [select id , Status_Changed_Manually__c from SFOrder__c where id =: ordobj.id ];
+                     s.Status_Changed_Manually__c = false ;
+                     update s;
+                     
+                     list<ProcessInstanceWorkitem> stt =[ SELECT Id FROM ProcessInstanceWorkitem WHERE ProcessInstance.TargetObjectId = : ordobj.id AND ProcessInstance.Status = 'Pending' LIMIT 1 ];
+                     system.debug('---approvalId---'+stt.size());
+                     if(stt.size()==0)
+                     {
+                         
+                         system.debug('--ordobj.Status__c-before--'+ordobj.Status__c);
+                         templateId2 = [select id, name from EmailTemplate where name =: 'S_CreditApproval'].id;  // For Different
+                         // getting the values from the custom settings
+                         // <!--- AJ----------------------->
+                         List<Credit_Approval_Emails__c> mcs = Credit_Approval_Emails__c.getall().values();
+                         system.debug('Zakir -- always--- Credit Apporval email--'+mcs);
+                         if(mcs.size()>0)
+                         {
+                             emailstr2 = mcs[0].Name;
+                             creditApproval_normal  = mcs[0].Name;
+                         }
+                         else
+                         {
+                             //  emailstr2 = 'credit.approvals@oatleywines.com.au';
+                             //   creditApproval_normal  = 'credit.approvals@oatleywines.com.au';
+                             
+                             emailstr2 = 'zaki.iqbal@sfclouds.com';
+                             creditApproval_normal  = 'zaki.iqbal@sfclouds.com';
+                         }
+                         req=new Approval.ProcessSubmitRequest();
+                         system.debug('---objevctd id ---'+ordobj.id);
+                         req.setObjectId(ordobj.id);
+                         system.debug('-Discount-Approval in Class---1');
+                         Approval.ProcessResult result2 = Approval.process(req);
+                     }
+                 }
+                 
+             }
+             
+             else{
+                 // comment the below section becoz the status would be set Pending, when the form has been submitted .
+                 
+                 /*   if(ordobj.Status__c != 'Check Credit')
+{
+} 
+*/
+                 
+                 // <!--- AJ----------------------->     
+                 //else 
+                 
+                 system.debug('Else part ');
+                 
+                 if(deptor.Credit_Check__c == 'Always'){
+                     list<ProcessInstanceWorkitem> stt =[ SELECT Id FROM ProcessInstanceWorkitem WHERE ProcessInstance.TargetObjectId = : ordobj.id AND ProcessInstance.Status = 'Pending' LIMIT 1 ];
+                     system.debug('---approvalId---'+stt.size());
+                     
+                     system.debug('---ordobj---'+ordobj);
+                     
+                     
+                     
+                     //   add on 12-11-2018 start
+                     //   ordobj.Discount_Approval__c = 'Requires Approval';
+                     //   ordobj.Status__c = 'Pending';
+                     //   update ordobj;
+                     //   add on 12-11-2018 End 
+                     
+                     if(stt.size()==0)
+                     {
+                         system.debug('stt--- = 0');
+                         templateId2 = [select id, name from EmailTemplate where name =: 'S_CreditApproval'].id;  // For Different when there is no discount
+                         // getting the values from the custom settings
+                         List<Credit_Approval_Emails__c> mcs = Credit_Approval_Emails__c.getall().values();
+                         if(mcs.size()>0)
+                         {
+                             emailstr2 = mcs[0].Name;
+                             // added by anshul
+                             creditApproval_normal = mcs[0].Name;
+                         }
+                         else
+                         {
+                             //emailstr2 = 'credit.approvals@oatleywines.com.au';
+                             // added by anshul
+                             //creditApproval_normal = 'credit.approvals@oatleywines.com.au';
+                         }
+                         //emailstr2 =  'mhunwick@hamiltonisland.com.au';
+                         //emailstr2 = 'credit.approvals@oatleywines.com.au';
+                         //emailstr2 = 'surbhi.singh@sfclouds.com'; 
+                         
+                         req=new Approval.ProcessSubmitRequest();
+                         req.setObjectId(ordobj.id);
+                         system.debug('-Discount-Approval in Class---11--req---'+req);
+                         system.debug('-Discount-Approval in Class---11--ordobj_id---'+ordobj.id);
+                         // Approval.ProcessResult result2 = Approval.process(req);
+                         
+                         
+                     }     
+                     
+                 }
+                 
+             }
+             
+             
+             
+             
+             
+             
+             //   *****************Discount section **************
+             system.debug('Zakir2');
+             if(DiscountApproval.trim() != 'undefined' ){
+                 oliobj.Discount_Approval__c = DiscountApproval;}
+             if(DiscountFrequency.trim() != 'undefined' ){
+                 oliobj.Discount_Frequency__c = DiscountFrequency;}
+             
+             if(DiscountType.trim() != 'undefined' ){   
+                 oliobj.Discount_Type__c = DiscountType;}
+             
+             if(FreeReason.trim() == 'No Discount' || oliobj.Discount_Amount__c == 0.00 || oliobj.Discount_Amount__c == null){
+                 system.debug('--FreeReason --'+FreeReason);
+                 oliobj.Applied_Discount__c = 'No';
+             } 
+             
+             system.debug('------oliobj-----'+oliobj+'---emailstr2----'+emailstr2);
+             newolilist.add(oliobj);
+             
+         }
+         
+         //         ***** FOR LOOP END **** 
+         
+         
+         
+         
+         System.debug('newolilist==='+newolilist);
+         System.debug('newolilist size==='+newolilist.size());
+         try{
+             if(newolilist.size()>0)
+             {
+                 System.debug('new order line list ==='+newolilist);
+                 insert newolilist;
+                 
+             }
+         }
+         catch(Exception e)
+         {      system.debug('Exception---');
+          System.debug(e);
+          return null;    
+         }  
+         
+         
+         
+         // send Email
+         
+         tempContact.LastName ='test';
+         tempContact.firstName = 'testmerfantz';
+         tempContact.email = 'norep5y1@salesforce.com';
+         tempContact.Account = [select id, name from Account limit 1];
+         
+         Insert tempContact;
+         
+         Id targetObjectId = sfId;    //orderid;
+         
+         Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+         Messaging.SingleEmailMessage email2 = new Messaging.SingleEmailMessage();
+         
+         Id templateId; 
+         
+         try {
+             if(!Test.isRunningTest())
+                 
+                 templateId = [select id, name from EmailTemplate where name =: 'S_Request Confirmation Order Form'].id;                // for sales rap
+             
+         } catch (Exception e) {
+             e.getMessage();
+         }
+         
+         //  string emailstr = '';        
+         system.debug('----templateId ---'+templateId);
+         
+         /*     if(userinfo.getUserEmail() != null){
+emailstr = string.valueof(userinfo.getUserEmail());
+system.debug('emailstr  userEmail--'+emailstr);
+}   
+else{    emailstr = 'zaki.iqbal@sfclouds.com'; 
+} */
+         
+         
+         string emailstr = 'zaki.iqbal@sfclouds.com'; 
+         
+         string []to=new string[]{emailstr};
+             email.setToAddresses(to);
+         email.setTargetObjectId(tempContact.id);
+         email.setWhatId(targetObjectId);
+         email.setTemplateId(templateId);
+         allemail.add(email);
+         
+         if(Test.isRunningTest())
+         {
+             emailstr2='zaki.iqbal@sfclouds.com';
+         }
+         if(emailstr2 != '')
+         {  
+             system.debug('emailstr2--Not blank--'+emailstr2);
+             string []to2 = new string[]{emailstr2};
+                 email2.setToAddresses(to2);
+             email2.setTargetObjectId(tempContact.id);
+             email2.setWhatId(targetObjectId);
+             email2.setTemplateId(templateId2);
+             allemail.add(email2);
+         }    
+     } 
+     
+     // *********************** END if(ButtonType == '')   *****************
+     
+     
+     
+     
+     else if(buttonType == 'MODIFY')
+     {
+         
+         
+         system.debug('********MODIFY*******');
+         set<string> idsof_UpdatedOrderLineItems= new set<string>();   
+         List<Order_Line_Item__c> newolilistupdateinsert = new List<Order_Line_Item__c  >();
+         
+         system.debug('---wholeList22 size------'+wholeList22.size());
+         system.debug('---wholeList22------'+wholeList22);
+         SFOrder__c ordobjM;
+         
+         
+         if(wholeList22.size()>0)
+         {
+             system.debug('----wholeList22.size()----'+wholeList22.size());
+             Account deptor = [select id,defcarrier__c,location__c,Credit_Check__c from Account where id =:Debtorid_Main_Modify limit 1];
+             
+             system.debug('deptor------->>>'+deptor);
+             system.debug('sfoId in modify------->>>'+sfoId);
+             
+             ordobjM = [select id,Name,Debtor__r.Id,Debtor__c,(select Id,SFOrder__c,Applied_Discount__c,Discount_Amount__c,Discount_Approval__c,Discount_Frequency__c,Discount_Type__c,Ignore_Discount__c,Stock_item__r.Name,Unit_NameS__c,Stock_item__r.Id,Stock_item__r.desc__c,Standard_Discount__c,BrandText__c,Sub_Brand__c,VarietyText__c,VintageText__c,unit__c,Quantity__c,Free_Reason__c,Free_Reason_Code__c from Order_Line_Items__r),Status__c,Status_After_Approval__c,Discount_Approval__c,delivery_Post_Code__c,Note_to_Customer_Service__c,Send_Mail__c,Status_Changed_Manually__c,message1__c,message2__c,message3__c,message4__c,Customer_Purchase_Order_No__c,delivery1__c,delivery2__c,delivery3__c,delivery4__c from SFOrder__c where id=:sfoId];
+             system.debug('ordobjM before update--'+ordobjM);
+             
+             //ordobjM.Debtor__c = Debtorid_Main; //can not update bcz of master detail relationship
+             ordobjM.Note_to_Customer_Service__c = customer_Service; 
+             Date dob1= Date.valueOf(final22);
+             //ordobjM.orddate__c = Date.parse(dob1.format()); // date will not update
+             // ordobjM.New_Delivery_Instructions__c = Delivery_Instructions1;
+             // ordobjM.New_Delivery_Instructions_2__c = Delivery_Instructions2; 
+             
+             ordobjM.Send_Mail__c = true;
+             ordobjM.Status_Changed_Manually__c = true;
+             ordobjM.message1__c= msg1;
+             ordobjM.message2__c = msg2;
+             ordobjM.message3__c = msg3;
+             ordobjM.message4__c = msg4;
+             ordobjM.Customer_Purchase_Order_No__c = custOrdNo;
+             ordobjM.delivery1__c =del1;
+             ordobjM.delivery2__c =del2;
+             ordobjM.delivery3__c =del3;
+             ordobjM.delivery4__c =del4;
+             ordobjM.delivery_Post_Code__c =del5;   
+             
+             system.debug('---modify part statusValue ----'+statusValue );
+             if(statusValue == 'Submit Sales Order')
+             {   
+                 system.debug(' if  - Sales Order - Draft');
+                 ordobjM.Status__c = 'Sales Order - Draft';
+             }
+             else if(statusValue == 'Draft')
+             {
+                 system.debug('else if - Draft');
+                 ordobjM.Status__c = 'Draft';
+             }
+             else if(statusValue == 'Quote')
+             {
+                 system.debug(' else if  - Quote');
+                 ordobjM.Status__c = 'Quote';
+             }
+             else 
+             {
+                 system.debug(' else - Quote');
+                 ordobjM.Status__c = 'Invoice - Draft';
+             } 
+             
+             
+             update  ordobjM;
+             sfId= ordobjM.Id;
+             
+             //   sfId = 'a005D000003GxtwQAC';
+             system.debug('---sfId--->>>'+sfId);    
+             
+             system.debug('ordobjM after update--'+ordobjM);
+         }
+         
+         else{return null;} 
+         
+         system.debug('---sfId-'+sfId);     
+         
+         
+         
+         
+         //         *****FOR LOOP START  FOR UPDATE  **** 
+         
+         for(String WholeString : wholeList22)
+         {
+             string brand =WholeString.subStringBefore('@brand*');
+             string size = WholeString.substringBetween('@brand*', '@size*');
+             string quantity = WholeString.substringBetween('@size*', '@quan*');
+             string Variety = WholeString.substringBetween('@quan*', '@vari*');
+             string Vintage = WholeString.substringBetween('@vari*', '@vint*');
+             string sub_brand = WholeString.substringBetween('@vint*', '@subbrand*');
+             string FreeReason  =WholeString.substringBetween('@subbrand*', '@freeRsn*');
+             string approval = WholeString.substringBetween('@freeRsn*', '@DiscountApproval*');
+             string frequency = WholeString.substringBetween('@DiscountApproval*', '@DiscountAmt*');
+             string amount = WholeString.substringBetween('@DiscountAmt*', '@DiscountType*');
+             string type = WholeString.substringBetween('@DiscountType*', '@HidstkId*');
+             string HidstkId = WholeString.substringBetween('@HidstkId*', '@orderLineId*');
+             string orderLineId = WholeString.substringBetween('@orderLineId*', '@hidstkId_update*');
+             string HidstkId_update = WholeString.substringBetween('@hidstkId_update*', '@orderLineId_update*');
+             string orderLineId_update = WholeString.substringBetween('@orderLineId_update*', '. '); 
+             
+             
+             // later use - string stockItem=WholeString.subStringBefore('@stock*');
+             // later use -- String orderLineId = WholeString.substringBetween('@orderId*','.');
+             
+             
+             
+             system.debug('brand --->'+brand);
+             system.debug('size --->'+size);
+             system.debug('quantity --->'+quantity);
+             system.debug('Variety --->'+Variety);
+             system.debug('Vintage --->'+Vintage);
+             system.debug('sub_brand --->'+sub_brand);
+             system.debug('FreeReason --->'+FreeReason);
+             system.debug('DiscountApproval --->'+approval);
+             system.debug('frequency --->'+frequency);
+             system.debug('amount --->'+amount);
+             system.debug('type--->'+type);
+             system.debug('HidstkId--->'+HidstkId);
+             system.debug('orderLineId--->'+orderLineId);
+             system.debug('HidstkId_update--->'+HidstkId_update);
+             system.debug('orderLineId_update--->'+orderLineId_update);
+             
+             
+             
+             //  if(orderLineId_update.trim() != 'None') // update order line item
+             if((orderLineId_update.trim() != 'None' || orderLineId_update.trim() != 'undefined') && (orderLineId.trim() == 'undefined' )) 
+             {  system.debug('*****orderLineId_update.trim() != None******');
+              if(orderLineId_update.trim() != 'undefined')
+              {
+                  list<Order_Line_Item__c> update_olilist= new list<Order_Line_Item__c>();
+                  idsof_UpdatedOrderLineItems.add(orderLineId_update.trim());
+                  system.debug('orderLineId_update.trim()----'+orderLineId_update.trim());
+                  for(Order_Line_Item__c oli : ordobjM.Order_Line_Items__r)
+                  {    
+                      if(oli.Id == orderLineId_update.trim())
+                      {
+                          
+                          Stock_Item__c stkid =[select id,name,desc__c,(select id,Unit__r.Name,Unit__r.Name__c,Stock_Item__r.name,Default_Unit__c,ConvertF__c from Stock_Units__r where Unit__r.Name__c =: size.trim() limit 1) from Stock_Item__c where id =: HidstkId_update.trim() limit 1];       
+                          
+                          Stock_Unit__c stkUnit= [SELECT id,Stock_item__c,ConvertF__c,Unit__r.Name__c FROM Stock_Unit__c WHERE Stock_item__c =: HidstkId_update.trim() AND  Unit__r.Name__c =: size.trim() limit 1 ];    
+                          oli.Unit_ConvertS__c = stkUnit.ConvertF__c;
+                          
+                          Decimal TotalVal=0.00; 
+                          oli.Stock_Item__c = stkid.id;
+                          if(!Test.isRunningTest())
+                          {
+                              oli.unit__c = stkid.Stock_Units__r[0].Unit__r.Name;
+                          }
+                          oli.Unit_NameS__c = size.trim();
+                          
+                          if(FreeReason.trim() != '--None--' )
+                          {
+                              if(FreeReason.trim() != ''){
+                                  Free_Reason__c frCode=[select id,Reason__c from Free_Reason__c where Description__c =: FreeReason.trim() limit 1];
+                                  oli.Free_Reason_Code__c = frCode.Reason__c;   }  
+                          }
+                          
+                          oli.BrandText__c= brand;
+                          oli.Sub_Brand__c= sub_brand;
+                          oli.VarietyText__c= variety;
+                          oli.VintageText__c= vintage;
+                          oli.Standard_Discount__c = '';              
+                          
+                          oli.Quantity__c = Decimal.valueOf(quantity.trim());
+                          
+                          if(FreeReason.trim() != '--None--'){ 
+                              oli.Free_Reason__c = FreeReason;
+                              
+                              if(FreeReason.trim()=='No Discount'){ oli.Standard_Discount__c = 'No';  }
+                              
+                          }
+                          
+                          
+                          system.debug('----outside loop -amount--'+amount.trim());
+                          if(amount.trim() != 'undefined' && (amount.trim() != '' || amount.trim() != null))
+                          {
+                              oli.Discount_Amount__c = Double.valueOf(amount);
+                              oli.Applied_Discount__c = 'Yes';  
+                          }
+                          else{ oli.Applied_Discount__c = 'No'; oli.Discount_Amount__c= 0.00;}
+                          
+                          if(approval.trim() != 'undefined' ){ oli.Discount_Approval__c = approval; }
+                          else{ oli.Discount_Approval__c = '';  }
+                          
+                          if(frequency.trim() != 'undefined' ){ oli.Discount_Frequency__c = frequency;}
+                          else{ oli.Discount_Frequency__c = '';} 
+                          
+                          if(type.trim() != 'undefined' ){oli.Discount_Type__c = type;}
+                          else{ oli.Discount_Type__c = '' ;}    
+                          
+                          if(FreeReason.trim() == 'No Discount' || oli.Discount_Amount__c == 0.0 || oli.Discount_Amount__c == null)
+                          {
+                              system.debug('--FreeReason --'+FreeReason);
+                              oli.Applied_Discount__c = 'No';
+                              
+                          } 
+                          
+                          update_olilist.add(oli);
+                          
+                          
+                          System.debug('update_olilist==='+update_olilist);
+                          System.debug('update_olilistsize==='+update_olilist.size());
+                          
+                          try{
+                              if(update_olilist.size()>0)
+                              {
+                                  update update_olilist;
+                                  system.debug('update id ---update_olilist--'+update_olilist);
+                              }
+                              
+                          }catch(Exception e){
+                              System.debug(e);
+                              return null;    
+                          }
+                      }
+                  }
+              } 
+             }       // NOT "NONE"
+             // Added by KRRISH
+             // else if(orderLineId_update.trim() == undefined)  // new order line item
+             //	else if(orderLineId.trim() == 'undefined'  )
+             
+             
+             if(orderLineId.trim() == 'undefined' && HidstkId_update.trim() == 'undefined' && orderLineId_update.trim() == 'undefined' )
+             {
+                 system.debug('Modify -- New order Line Item ');
+                 system.debug('*****orderLineId_update.trim() != None******');
+                 system.debug('---None block ---'+sfoId);
+                 Order_Line_Item__c oliobj=new Order_Line_Item__c ();  
+                 oliobj.SFOrder__c= sfoId; 
+                 
+                 
+                 Stock_Item__c stkid=[select id,name,desc__c,(select id,Unit__r.Name,Unit__r.Name__c,Stock_Item__r.name,Default_Unit__c,ConvertF__c from Stock_Units__r where Unit__r.Name__c =: size.trim() limit 1) from Stock_Item__c where id =: HidstkId.trim() limit 1]; 
+                 
+                 
+                 
+                 Stock_Unit__c stkUnit= [SELECT id,Stock_item__c,ConvertF__c,Unit__r.Name__c FROM Stock_Unit__c WHERE Stock_item__c =: HidstkId.trim() AND  Unit__r.Name__c =: size.trim() limit 1 ];  
+                 
+                 oliobj.Unit_ConvertS__c = stkUnit.ConvertF__c;
+                 
+                 Decimal TotalVal=0.00; 
+                 oliobj.Stock_Item__c = stkid.id;
+                 if(!Test.isRunningTest())              {      
+                     oliobj.unit__c = stkid.Stock_Units__r[0].Unit__r.Name;  
+                 }
+                 
+                 oliobj.Unit_NameS__c = size.trim();
+                 
+                 
+                 
+                 if(FreeReason.trim() != '--None--')
+                 {
+                     if(FreeReason.trim() != '')
+                     {
+                         Free_Reason__c frCode=[select id,Reason__c from Free_Reason__c where Description__c =: FreeReason.trim() limit 1];
+                         oliobj.Free_Reason_Code__c = frCode.Reason__c;
+                     }
+                     
+                 }
+                 
+                 oliobj.BrandText__c= brand;
+                 oliobj.Sub_Brand__c= sub_brand;
+                 oliobj.VarietyText__c= variety;
+                 oliobj.VintageText__c= vintage;
+                 
+                 oliobj.Quantity__c = Decimal.valueOf(quantity.trim());
+                 
+                 if(FreeReason.trim() != '--None--'){ 
+                     oliobj.Free_Reason__c = FreeReason;
+                     
+                     if(FreeReason.trim()=='No Discount'){                      oliobj.Standard_Discount__c = 'No';                         
+                                                         }
+                     
+                 }
+                 
+                 oliobj.Discount_Amount__c= 0.00;
+                 if(amount.trim() != 'undefined' && (amount.trim() != '' || amount.trim() != null))
+                 {
+                     system.debug('----inside loop amount---'+amount);
+                     oliobj.Discount_Amount__c = Double.valueOf(amount);
+                     oliobj.Applied_Discount__c = 'Yes';
+                     
+                 }
+                 if(approval.trim() != 'undefined' ){
+                     oliobj.Discount_Approval__c = approval;}
+                 if(frequency.trim() != 'undefined' ){
+                     oliobj.Discount_Frequency__c = frequency;}
+                 if(type.trim() != 'undefined' ){   
+                     oliobj.Discount_Type__c = type;}
+                 if(FreeReason.trim() == 'No Discount' || oliobj.Discount_Amount__c == 0.0 || oliobj.Discount_Amount__c == null)
+                 {
+                     system.debug('--FreeReason --'+FreeReason);
+                     oliobj.Applied_Discount__c = 'No';
+                     // oliobj.Ignore_Discount__c = 'Yes';
+                     
+                 } 
+                 
+                 
+                 newolilist.add(oliobj);
+                 
+                 
+                 
+             }// end of new order line item  
+             
+             
+             
+         }
+         
+         
+         
+         
+         
+         
+         System.debug('newolilist==='+newolilist);
+         System.debug('newolilist size==='+newolilist.size());
+         
+         try{
+             if(newolilist.size()>0)
+             {
+                 system.debug('newolilist--'+newolilist);
+                 insert newolilist;
+             }
+             
+         }
+         catch(Exception e){
+             System.debug('e---'+e);
+             return null;    
+         }
+         
+         
+         
+         
+         
+         //size of wholelist 
+         /*   system.debug('---getting sizee---'+idsof_UpdatedOrderLineItems.size());
+for(integer p=1;p <= OrderIdMap.size();p++)
+{
+string jj = OrderIdMap.get(p);
+system.debug(jj+'--idsof_UpdatedOrderLineItems----'+idsof_UpdatedOrderLineItems+'----idsof_UpdatedOrderLineItems.contains(jj)----'+idsof_UpdatedOrderLineItems.contains(jj));
+if(idsof_UpdatedOrderLineItems.contains(jj))
+{
+system.debug('---contains jj ---'+jj);
+}
+else{
+listOfDel.add(jj);
+system.debug('--false--');
+}
+}
+if(listOfDel.size()>0)
+{       
+list<Order_Line_Item__c > DelO=[select id from Order_Line_Item__c  where id in : listOfDel];
+system.debug('--DelO---'+DelO);  
+delete DelO;
+}     */     
+         
+         
+         
+         
+         // send Email
+         tempContact.LastName ='test';
+         tempContact.firstName = 'testmerfantz';
+         tempContact.email = 'norep5y1@salesforce.com';
+         //    tempContact.email = 'zaki.iqbal@sfclouds.com';
+         tempContact.Account = [select id, name from Account limit 1];
+         Insert tempContact;
+         Id targetObjectId = sfoId;//orderid;
+         
+         Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+         Messaging.SingleEmailMessage email2 = new Messaging.SingleEmailMessage();
+         
+         Id templateId; 
+         
+         try {
+             
+             
+             templateId = [select id, name from EmailTemplate where name =: 'S_Request Confirmation Order Form'].id; // for Sales rep
+         } catch (Exception e) {
+             e.getMessage();
+         }
+         
+         //   string emailstr = '';        
+         system.debug('----templateId ---'+templateId);
+         
+         /*   if(userinfo.getUserEmail() != null){
+emailstr =  string.valueof(userinfo.getUserEmail());} 
+else{ 
+emailstr='zaki.iqbal@sfclouds.com';
+}   */
+         
+         string emailstr = 'zaki.iqbal@sfclouds.com'; 
+         string []to=new string[]{emailstr};
+             email.setToAddresses(to);
+         email.setTargetObjectId(tempContact.id);
+         email.setWhatId(targetObjectId);
+         email.setTemplateId(templateId);
+         allemail.add(email);
+         
+         
+     }    
+     
+     //************************************************ END MODIFY BLOCK *******************************************
+     
+     
+     
+     
+     
+     
+     
+     try{
+         Messaging.SendEmailResult[] resultMail = Messaging.sendEmail(allemail);
+         
+         if(resultMail[0].isSuccess()) {     
+             msg= 'Your Mail Successfully sent!';
+             
+         }
+         else{
+             msg= resultMail[0].getErrors().get(0).getMessage();
+         }
+     }
+     catch(System.EmailException ex){
+         msg= 'Enter correct mail id or Enter each Mail id with separate by semicolon'+ex.getmessage();
+     } 
+     Delete tempContact;   
+     system.debug('---message ---'+msg);         
+     
+     
+     string z = 'zakirrr';
+     string zmsg = 'Method has been execute';
+     
+     
+     map<string,string> finalmap= new map<string,string>();
+     finalmap.put(sfId,msg);
+     //later use -- finalmap.put(z,zmsg);
+     system.debug('sfId--'+sfId);
+     system.debug('---final map--'+finalmap);
+     system.debug('--Class--Limits.getQueryRows()--'+Limits.getQueryRows()); 
+     return finalmap; 
+     
+    }
+    
+    
+    
+    @AuraEnabled
+    public static SFOrder__c getSForder_Info(string sfoId){
+        system.debug('***getSForder_Info****'+sfoId);
+        SFOrder__c sfo_VdChilds= [select id,Name,orddate__c,Note_to_Customer_Service__c,New_Delivery_Instructions__c,New_Delivery_Instructions_2__c, Debtor__r.Name,Debtor__r.Id,Total_Credit__c,Debtor__r.arl_bal90d__c,Debtor__r.arl_bal60d__c,Debtor__r.arl_bal120d__c, Debtor__c,Debtor__r.crrating__c,Customer_Purchase_Order_No__c,location1__c,defcarrier__c,(select Id,SFOrder__c,Applied_Discount__c,Discount_Amount__c,Discount_Approval__c,Discount_Frequency__c,Discount_Type__c,Ignore_Discount__c,Stock_item__r.Name,Unit_NameS__c,Stock_item__r.Id,Stock_item__r.desc__c,Standard_Discount__c,BrandText__c,Sub_Brand__c,VarietyText__c,VintageText__c,unit__c,Quantity__c,Free_Reason__c,Free_Reason_Code__c from Order_Line_Items__r),Delivery_One__c,DeliveryTwo__c,DeliveryThree__c, DeliveryFour__c,message1__c,message2__c,message3__c,message4__c,delivery1__c ,delivery2__c,delivery3__c, delivery4__c,Status__c,Status_After_Approval__c,Discount_Approval__c from SFOrder__c where id=:sfoId];
+        system.debug('sfo_VdChilds---'+sfo_VdChilds);
+        return sfo_VdChilds;   
+    }  
+    
+    
+    
+    
+    
+}
